@@ -23,5 +23,11 @@ def create_app():
         app.register_blueprint(users_bp)
         from app.blueprints.blueprint_authentication import auth_bp
         app.register_blueprint(auth_bp)
+        from app.blueprints.blueprint_teams import teams_bp
+        app.register_blueprint(teams_bp)
+        from app.blueprints.blueprint_todos import todos_bp
+        app.register_blueprint(todos_bp)
+        from app.blueprints.blueprint_settings import settings_bp
+        app.register_blueprint(settings_bp)
 
     return app

@@ -19,6 +19,8 @@ def index():
 # Create new user
 @users_bp.route('/create', methods=['POST'])
 def create_user():
+    if 'user_public_id' in session:
+        return jsonify({'error': 'You are already logged in.'}), 400
     new_user_data = request.json
 
     # Check if new_user_data is provided
@@ -88,6 +90,7 @@ def get_user(public_id):
         return jsonify({'error': 'User not found'}), 404
     return jsonify({'public_id': user.public_id, 'profile_name': user.profile_name})
 
+# Edit user information by public id
 @login_required
 @users_bp.route('/edit/<public_id>', methods=['PUT'])
 def edit_user(public_id):
@@ -122,8 +125,12 @@ def edit_user(public_id):
     db.session.commit()
     return jsonify({'message': 'User updated', 'public_id': user.public_id})
 
+# Delete user by public id
+@login_required
 @users_bp.route('/delete/<public_id>', methods=['DELETE'])
 def delete_user(public_id):
+    if session.get('user_public_id') != public_id:
+        return jsonify({'error': 'Unauthorized: You can only delete your own profile.'}), 403
     user = User.query.filter_by(public_id=public_id).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404
@@ -131,3 +138,27 @@ def delete_user(public_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({'message': 'User deleted', 'public_id': public_id})
+
+# Get all teams the user is a part of
+@users_bp.route('/<public_id>/teams', methods=['GET'])
+@login_required
+def get_user_teams(public_id):
+    from app.models import Team
+    from flask import session
+    # Only allow the user to see their own teams
+    if session.get('user_public_id') != public_id:
+        return jsonify({'error': 'Unauthorized: You can only view your own teams.'}), 403
+    teams = Team.query.filter(Team.members.contains([public_id])).all()
+    return jsonify([
+        {
+            'public_id': t.public_id,
+            'name': t.name,
+            'description': t.description,
+            'members': t.members,
+            'team_image': t.team_image,
+            'is_active': t.is_active,
+            'deleted': t.deleted,
+            'last_activity': t.last_activity,
+            'created_on': t.created_on
+        } for t in teams
+    ])
