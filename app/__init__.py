@@ -21,5 +21,7 @@ def create_app():
         # Register blueprints
         from app.blueprints.blueprint_users import users_bp
         app.register_blueprint(users_bp)
+        from app.blueprints.blueprint_authentication import auth_bp
+        app.register_blueprint(auth_bp)
 
     return app

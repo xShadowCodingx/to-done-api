@@ -1,11 +1,12 @@
 # Blueprint for users
 
 import datetime
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from uuid import uuid4
 from app.extensions import db
 from app.models import User, Settings
 from app.util.utility_functions import validate_name, validate_email, validate_password, hash_password, verify_password, encode_image_to_base64
+from app.util.decorators import login_required
 
 users_bp = Blueprint('users', __name__, url_prefix='/users')
 
@@ -74,19 +75,24 @@ def create_user():
     db.session.add_all([new_user, new_settings])
     db.session.commit()
 
-
     return jsonify({"message": "New user created!"}), 201
 
 # Get user information by public id
+@login_required
 @users_bp.route('/<public_id>', methods=['GET'])
 def get_user(public_id):
+    if session.get('user_public_id') != public_id:
+        return jsonify({'error': 'Unauthorized: You can only view your own profile.'}), 403
     user = User.query.filter_by(public_id=public_id).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404
     return jsonify({'public_id': user.public_id, 'profile_name': user.profile_name})
 
+@login_required
 @users_bp.route('/edit/<public_id>', methods=['PUT'])
 def edit_user(public_id):
+    if session.get('user_public_id') != public_id:
+        return jsonify({'error': 'Unauthorized: You can only edit your own profile.'}), 403
     user = User.query.filter_by(public_id=public_id).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404

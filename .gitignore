@@ -76,10 +76,6 @@ ipython_config.py
 # celery beat schedule file
 celerybeat-schedule
 
-# dotenv
-.env
-.env.*
-
 # virtualenv
 venv/
 ENV/
